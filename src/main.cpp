@@ -10,42 +10,53 @@ constexpr int SCREEN_WIDTH = 800;
 constexpr int SCREEN_HEIGHT = 800;
 
 float to_radians(float deg) {
-    return deg * (3.1415926f / 180.0f);
+    constexpr double df = 3.1415926f / 180.0f;
+    return deg * df;
+}
+
+Vector2 get_direction_from_angle(float angle) {
+    float radians = to_radians(angle);
+    return {cos(radians) ,-sin(radians)};
 }
 
 class Car {
 public:
-    Vector2 velocity {0.0f,0.0f};
     Vector2 position;
     Vector2 size;
 
-    float acceleration {0.0f};
+    float acceleration {20.0f};
     float speed {0.0f};
-    float rudder_angle {0.0f};
+    float turn_speed {90.0f};
+    float steering_angle {0.0f};
     float angle {0.0f};
 
     Car(float x,float y,float w,float h):position{x,y},size{w,h} {
 
     }
     void update(float delta_time) {
-        this->position.x += this->velocity.x * delta_time;
-        this->position.y += this->velocity.y * delta_time;
-    }
-    void gas() {
+
 
     }
-    void turn(float hw) {
-        float input = std::max(-1.0f,std::min(hw,1.0f));
-        this->rudder_angle = std::max(-60.0f,std::min(this->rudder_angle + (input * 30.0f),60.0f));
+    void gas(float hw,float delta_time) {
+    }
+    void turn(float hw,float delta_time) {
+        float input = std::clamp(hw,-1.0f,1.0f);
+        float r = input * turn_speed * delta_time;
+        this->steering_angle = std::clamp(this->steering_angle + r,-45.0f,45.0f);
     }
     static void draw_car(Car car,bool dev = false) {
         Rectangle temp_rect = {car.position.x,car.position.y,car.size.x,car.size.y};
-        DrawRectanglePro(temp_rect, {0.0f,0.0f},car.angle, MAROON);
+        DrawRectanglePro(temp_rect, {car.size.x / 2 ,car.size.y / 2},-car.angle, MAROON);
         if (dev) {
-            Vector2 direction {std::cos(to_radians(car.rudder_angle + 90)),-std::sin(to_radians(car.rudder_angle + 90))};
-            std::cout << direction.x << "," << direction.y << "\n";
-            float start_x = car.position.x + car.size.x / 2;
-            DrawLine(start_x,car.position.y,start_x + (direction.x * 30),car.position.y + (direction.y * 30),BLACK);
+            //car angle
+            Vector2 car_direction {get_direction_from_angle(car.angle)};
+            float d_x = car.size.x / 2;
+            Vector2 end_pos {car.position.x + car_direction.x * d_x,car.position.y + car_direction.y * d_x};
+            DrawLine(car.position.x,car.position.y,end_pos.x,end_pos.y,BLACK);
+
+            //rudder
+            Vector2 rudder {get_direction_from_angle(car.angle + car.steering_angle)};
+            DrawLine(end_pos.x,end_pos.y ,end_pos.x + rudder.x * 30,end_pos.y + rudder.y * 30,PURPLE);
         }
     }
 };
@@ -54,24 +65,23 @@ int main()
 {
     SetRandomSeed(time(nullptr));
 
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Diagram Voronoi");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Robot has no license");
 
     SetTargetFPS(60);
 
 
-    Car main_car {SCREEN_WIDTH / 2,SCREEN_HEIGHT / 2,40.0f,100.0f};
-
+    Car main_car {SCREEN_WIDTH / 2,SCREEN_HEIGHT / 2,100.0f,40.0f};
 
     while (!WindowShouldClose())
-    {
-        if (IsKeyDown(KEY_S)) ;
-        else if (IsKeyDown(KEY_W)) ;
-        if (IsKeyDown(KEY_D)) main_car.turn(-0.2);
-        else if (IsKeyDown(KEY_A)) main_car.turn(0.2);
+    {   
+        float delta_time = GetFrameTime();
+        if (IsKeyDown(KEY_S)) main_car.gas(-0.5f,delta_time);
+        else if (IsKeyDown(KEY_W)) main_car.gas(0.5f,delta_time);
+        if (IsKeyDown(KEY_D)) main_car.turn(-0.5f,delta_time);
+        else if (IsKeyDown(KEY_A)) main_car.turn(0.5f,delta_time);
 
-
-
-
+        main_car.update(delta_time);
+        main_car.angle += 0.3f;
         BeginDrawing();
 
         ClearBackground(DARKGREEN);
@@ -79,9 +89,9 @@ int main()
         Car::draw_car(main_car,true);
         DrawText(TextFormat("Frame time: %02.02f ms", GetFrameTime()), 10, 10, 20, WHITE);
         DrawText(TextFormat("Fps: %i", GetFPS()), 10, 30, 20, WHITE);
-        DrawText("Car:", 10, 65, 20, MAROON);
-        DrawText(TextFormat("angle: %f",main_car.angle), 10, 90, 20, MAROON);
+        DrawText(TextFormat("ANGLE: %f", main_car.angle), 10, 50, 20, WHITE);
         EndDrawing();
+
 
     }
     CloseWindow();
