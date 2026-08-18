@@ -2,7 +2,7 @@
 #include <iostream>
 #include <ctime>
 #include <cmath>
-#include <numbers>
+#include <algorithm>
 
 #include "raylib.h"
 
@@ -19,8 +19,9 @@ public:
     Vector2 position;
     Vector2 size;
 
-    float speed {20};
-    float rudder_angle {90.0f};
+    float acceleration {0.0f};
+    float speed {0.0f};
+    float rudder_angle {0.0f};
     float angle {0.0f};
 
     Car(float x,float y,float w,float h):position{x,y},size{w,h} {
@@ -30,13 +31,21 @@ public:
         this->position.x += this->velocity.x * delta_time;
         this->position.y += this->velocity.y * delta_time;
     }
+    void gas() {
+
+    }
+    void turn(float hw) {
+        float input = std::max(-1.0f,std::min(hw,1.0f));
+        this->rudder_angle = std::max(-60.0f,std::min(this->rudder_angle + (input * 30.0f),60.0f));
+    }
     static void draw_car(Car car,bool dev = false) {
         Rectangle temp_rect = {car.position.x,car.position.y,car.size.x,car.size.y};
         DrawRectanglePro(temp_rect, {0.0f,0.0f},car.angle, MAROON);
         if (dev) {
-            Vector2 direction {std::cos(to_radians(car.rudder_angle)),-std::sin(to_radians(car.rudder_angle))};
+            Vector2 direction {std::cos(to_radians(car.rudder_angle + 90)),-std::sin(to_radians(car.rudder_angle + 90))};
+            std::cout << direction.x << "," << direction.y << "\n";
             float start_x = car.position.x + car.size.x / 2;
-            DrawLine(start_x,car.position.y,start_x + (direction.x * 15),car.position.y + (direction.y * 15),BLACK);
+            DrawLine(start_x,car.position.y,start_x + (direction.x * 30),car.position.y + (direction.y * 30),BLACK);
         }
     }
 };
@@ -57,8 +66,8 @@ int main()
     {
         if (IsKeyDown(KEY_S)) ;
         else if (IsKeyDown(KEY_W)) ;
-        if (IsKeyDown(KEY_D)) ;
-        else if (IsKeyDown(KEY_A)) ;
+        if (IsKeyDown(KEY_D)) main_car.turn(-0.2);
+        else if (IsKeyDown(KEY_A)) main_car.turn(0.2);
 
 
 
