@@ -35,6 +35,8 @@ public:
     float steering_angle {0.0f};
     float angle {0.0f};
 
+    float max_speed {150.0f};
+
     Car(float x,float y,float w,float h):position{x,y},size{w,h} {
 
     }
@@ -55,26 +57,46 @@ public:
     }
     void gas(float hw,float delta_time) {
         float input = std::clamp(hw,-1.0f,1.0f);
-        this->speed = std::min(100.0f,this->speed + acceleration * input * delta_time);
+        this->speed = std::min(this->max_speed,this->speed + acceleration * input * delta_time);
 
     }
     void turn(float hw,float delta_time) {
         float input = std::clamp(hw,-1.0f,1.0f);
         float r = input * turn_speed * delta_time;
-        this->steering_angle = std::clamp(this->steering_angle + r,-45.0f,45.0f);
+        this->steering_angle = std::clamp(this->steering_angle + r,-30.0f,30.0f);
     }
     static void draw_car(Car car,bool dev = false) {
-        Rectangle temp_rect = {car.position.x,car.position.y,car.size.x,car.size.y};
-        DrawRectanglePro(temp_rect, {car.size.x / 2 ,car.size.y / 2},-car.angle, MAROON);
+        Rectangle temp_car {car.position.x,car.position.y,car.size.x,car.size.y};
+        Vector2 car_direction {get_direction_from_angle(car.angle)};
+        float d_x = car.size.x / 2;
+
+        Rectangle temp_up_car {car.position.x,car.position.y,car.size.x * 0.5f,car.size.y * 0.8f};
+
+        Vector2 wheels_size {car.size.x * 0.1f,car.size.y * 1.3f};
+
+        float wheels_kf = 0.75f;
+
+        Rectangle front_wheels {car.position.x + car_direction.x * d_x * wheels_kf,car.position.y + car_direction.y * d_x * wheels_kf,wheels_size.x,wheels_size.y};
+
+        Rectangle back_wheels {car.position.x - car_direction.x * d_x * wheels_kf,car.position.y - car_direction.y * d_x * wheels_kf,wheels_size.x,wheels_size.y};
+
+        DrawRectanglePro(front_wheels, {front_wheels.width / 2 ,front_wheels.height / 2},-(car.angle + car.steering_angle), BLACK);
+
+        DrawRectanglePro(back_wheels, {back_wheels.width / 2 ,back_wheels.height / 2},-car.angle, BLACK);
+
+        DrawRectanglePro(temp_car, {car.size.x / 2 ,car.size.y / 2},-car.angle, YELLOW);
+
+        DrawRectanglePro(temp_up_car, {temp_up_car.width / 2 ,temp_up_car.height / 2},-car.angle, GOLD);
+
         if (dev) {
             //car angle
-            Vector2 car_direction {get_direction_from_angle(car.angle)};
-            float d_x = car.size.x / 2;
+            
             Vector2 end_pos {car.position.x + car_direction.x * d_x,car.position.y + car_direction.y * d_x};
             DrawLine(car.position.x,car.position.y,end_pos.x,end_pos.y,BLACK);
 
             //rudder
             Vector2 rudder {get_direction_from_angle(car.angle + car.steering_angle)};
+            
             DrawLine(end_pos.x,end_pos.y ,end_pos.x + rudder.x * 30,end_pos.y + rudder.y * 30,PURPLE);
 
 
@@ -93,7 +115,7 @@ int main()
     SetTargetFPS(60);
 
 
-    Car main_car {SCREEN_WIDTH / 2,SCREEN_HEIGHT / 2,100.0f,40.0f};
+    Car main_car {SCREEN_WIDTH / 2,SCREEN_HEIGHT / 2,70.0f,30.0f};
 
     while (!WindowShouldClose())
     {   
@@ -108,7 +130,7 @@ int main()
 
         ClearBackground(DARKGREEN);
 
-        Car::draw_car(main_car,true);
+        Car::draw_car(main_car);
         DrawText(TextFormat("Frame time: %02.02f ms", GetFrameTime()), 10, 10, 20, WHITE);
         DrawText(TextFormat("Fps: %i", GetFPS()), 10, 30, 20, WHITE);
         DrawText(TextFormat("ANGLE: %f", main_car.angle), 10, 50, 20, WHITE);
