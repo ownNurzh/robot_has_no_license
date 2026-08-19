@@ -9,6 +9,9 @@
 constexpr int SCREEN_WIDTH = 800;
 constexpr int SCREEN_HEIGHT = 800;
 
+constexpr int ROAD_WIDTH {125};
+constexpr int ROADS_SPACE {100};
+
 float to_radians(float deg) {
     constexpr double df = PI / 180.0f;
     return deg * df;
@@ -24,6 +27,17 @@ Vector2 get_direction_from_angle(float angle) {
     return {cos(radians) ,-sin(radians)};
 }
 
+constexpr Rectangle city_roads[] {
+    {ROADS_SPACE,0,ROAD_WIDTH,SCREEN_HEIGHT},
+    //{(ROADS_SPACE * 2) + ROAD_WIDTH,0,ROAD_WIDTH,SCREEN_HEIGHT},
+    {(ROADS_SPACE + ROAD_WIDTH) * 2 + ROADS_SPACE,0,ROAD_WIDTH,SCREEN_HEIGHT},
+
+
+    {0,ROADS_SPACE,SCREEN_WIDTH,ROAD_WIDTH},
+    //{0,(ROADS_SPACE * 2) + ROAD_WIDTH,SCREEN_WIDTH,ROAD_WIDTH},
+    {0,(ROADS_SPACE + ROAD_WIDTH) * 2 + ROADS_SPACE,SCREEN_WIDTH,ROAD_WIDTH},
+};
+
 class Car {
 public:
     Vector2 position;
@@ -31,7 +45,7 @@ public:
 
     float acceleration {100.0f};
     float speed {0.0f};
-    float turn_speed {90.0f};
+    float turn_speed {100.0f};
     float steering_angle {0.0f};
     float angle {0.0f};
 
@@ -106,6 +120,15 @@ public:
     }
 };
 
+
+void draw_city() {
+    ClearBackground(DARKGREEN);
+
+    for (const Rectangle &road : city_roads) {
+        DrawRectangleRec(road,DARKGRAY);
+    }
+}
+
 int main()
 {
     SetRandomSeed(time(nullptr));
@@ -115,7 +138,7 @@ int main()
     SetTargetFPS(60);
 
 
-    Car main_car {SCREEN_WIDTH / 2,SCREEN_HEIGHT / 2,70.0f,30.0f};
+    Car main_car {SCREEN_WIDTH / 2,SCREEN_HEIGHT / 2,50.0f,20.0f};
 
     while (!WindowShouldClose())
     {   
@@ -127,10 +150,10 @@ int main()
 
         main_car.update(delta_time);
         BeginDrawing();
+        draw_city();
+       
 
-        ClearBackground(DARKGREEN);
-
-        Car::draw_car(main_car);
+        Car::draw_car(main_car,true);
         DrawText(TextFormat("Frame time: %02.02f ms", GetFrameTime()), 10, 10, 20, WHITE);
         DrawText(TextFormat("Fps: %i", GetFPS()), 10, 30, 20, WHITE);
         DrawText(TextFormat("ANGLE: %f", main_car.angle), 10, 50, 20, WHITE);
