@@ -49,7 +49,7 @@ public:
     float steering_angle {0.0f};
     float angle {0.0f};
 
-    float max_speed {150.0f};
+    float max_speed {200.0f};
 
     Car(float x,float y,float w,float h):position{x,y},size{w,h} {
 
@@ -71,7 +71,7 @@ public:
     }
     void gas(float hw,float delta_time) {
         float input = std::clamp(hw,-1.0f,1.0f);
-        this->speed = std::min(this->max_speed,this->speed + acceleration * input * delta_time);
+        this->speed = std::clamp(this->speed + acceleration * input * delta_time,-this->max_speed * 0.5f,this->max_speed);
 
     }
     void turn(float hw,float delta_time) {
