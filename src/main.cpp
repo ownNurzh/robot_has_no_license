@@ -13,7 +13,7 @@ constexpr int ROAD_WIDTH {150};
 
 constexpr int SPAWN_SIZE = ROAD_WIDTH * 0.6f;
 
-constexpr int SPAWN_SIZE_DIFF = ROAD_WIDTH * 0.1f * 0.5f;
+constexpr int SPAWN_SIZE_DIFF = ROAD_WIDTH * 0.1f;
 
 constexpr int ROADS_GAP {ROAD_WIDTH};
 
@@ -155,6 +155,11 @@ void draw_city() {
 
     for (const Rectangle &road : city_roads) {
         DrawRectangleRec(road,DARKGRAY);
+        if (road.width == ROAD_WIDTH) {
+            DrawLineDashed({road.x + ROAD_WIDTH / 2,road.y},{road.x + ROAD_WIDTH / 2,road.y + road.height},10,6,WHITE);
+        } else {
+            DrawLineDashed({road.x ,road.y + ROAD_WIDTH / 2},{road.x + road.width,road.y + ROAD_WIDTH / 2},10,6,WHITE);
+        }
     }
 
     for (const Rectangle &spawn : spawn_points) {
