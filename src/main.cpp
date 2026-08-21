@@ -6,11 +6,21 @@
 
 #include "raylib.h"
 
-constexpr int SCREEN_WIDTH = 800;
-constexpr int SCREEN_HEIGHT = 800;
+constexpr int SCREEN_WIDTH = 1000;
+constexpr int SCREEN_HEIGHT = 900;
 
-constexpr int ROAD_WIDTH {125};
-constexpr int ROADS_SPACE {100};
+constexpr int ROAD_WIDTH {150};
+
+constexpr int SPAWN_SIZE = ROAD_WIDTH * 0.6f;
+
+constexpr int SPAWN_SIZE_DIFF = ROAD_WIDTH * 0.1f * 0.5f;
+
+constexpr int ROADS_GAP {ROAD_WIDTH};
+
+constexpr float CAR_WIDTH {50.0f};
+
+constexpr float CAR_HEIGHT {20.0f};
+
 
 float to_radians(float deg) {
     constexpr double df = PI / 180.0f;
@@ -28,15 +38,34 @@ Vector2 get_direction_from_angle(float angle) {
 }
 
 constexpr Rectangle city_roads[] {
-    {ROADS_SPACE,0,ROAD_WIDTH,SCREEN_HEIGHT},
-    //{(ROADS_SPACE * 2) + ROAD_WIDTH,0,ROAD_WIDTH,SCREEN_HEIGHT},
-    {(ROADS_SPACE + ROAD_WIDTH) * 2 + ROADS_SPACE,0,ROAD_WIDTH,SCREEN_HEIGHT},
+    {ROADS_GAP,0,ROAD_WIDTH,SCREEN_HEIGHT},
+
+    {SCREEN_WIDTH - ROADS_GAP - ROAD_WIDTH,0,ROAD_WIDTH,SCREEN_HEIGHT},
 
 
-    {0,ROADS_SPACE,SCREEN_WIDTH,ROAD_WIDTH},
-    //{0,(ROADS_SPACE * 2) + ROAD_WIDTH,SCREEN_WIDTH,ROAD_WIDTH},
-    {0,(ROADS_SPACE + ROAD_WIDTH) * 2 + ROADS_SPACE,SCREEN_WIDTH,ROAD_WIDTH},
+    {0,ROADS_GAP,SCREEN_WIDTH,ROAD_WIDTH},
+
+    {0,SCREEN_HEIGHT - ROADS_GAP - ROAD_WIDTH,SCREEN_WIDTH,ROAD_WIDTH},
 };
+
+constexpr Rectangle spawn_points[] {
+    {city_roads[0].x + (ROAD_WIDTH - SPAWN_SIZE) / 2,city_roads[0].y + SPAWN_SIZE_DIFF,SPAWN_SIZE,SPAWN_SIZE},
+    {city_roads[0].x + (ROAD_WIDTH - SPAWN_SIZE) / 2,city_roads[0].y + city_roads[0].height - SPAWN_SIZE - SPAWN_SIZE_DIFF,SPAWN_SIZE,SPAWN_SIZE},
+
+    {city_roads[1].x + (ROAD_WIDTH - SPAWN_SIZE) / 2,city_roads[1].y + SPAWN_SIZE_DIFF,SPAWN_SIZE,SPAWN_SIZE},
+    {city_roads[1].x + (ROAD_WIDTH - SPAWN_SIZE) / 2,city_roads[1].y + city_roads[1].height - SPAWN_SIZE - SPAWN_SIZE_DIFF,SPAWN_SIZE,SPAWN_SIZE},
+
+    {city_roads[2].x + SPAWN_SIZE_DIFF,city_roads[2].y + (ROAD_WIDTH - SPAWN_SIZE) / 2,SPAWN_SIZE,SPAWN_SIZE},
+    {city_roads[2].x + city_roads[2].width - SPAWN_SIZE - SPAWN_SIZE_DIFF,city_roads[2].y + (ROAD_WIDTH - SPAWN_SIZE) / 2,SPAWN_SIZE,SPAWN_SIZE},
+
+    {city_roads[3].x + SPAWN_SIZE_DIFF,city_roads[3].y + (ROAD_WIDTH - SPAWN_SIZE) / 2,SPAWN_SIZE,SPAWN_SIZE},
+    {city_roads[3].x + city_roads[3].width - SPAWN_SIZE - SPAWN_SIZE_DIFF,city_roads[3].y + (ROAD_WIDTH - SPAWN_SIZE) / 2,SPAWN_SIZE,SPAWN_SIZE},
+};
+
+Vector2 get_random_spawn() {
+    int random_index = GetRandomValue(0,4 * 2 - 1);
+    return {spawn_points[random_index].x + SPAWN_SIZE / 2,spawn_points[random_index].y + SPAWN_SIZE / 2};
+}
 
 class Car {
 public:
@@ -127,6 +156,10 @@ void draw_city() {
     for (const Rectangle &road : city_roads) {
         DrawRectangleRec(road,DARKGRAY);
     }
+
+    for (const Rectangle &spawn : spawn_points) {
+        DrawRectangleRec(spawn,DARKPURPLE);
+    }
 }
 
 int main()
@@ -137,8 +170,8 @@ int main()
 
     SetTargetFPS(60);
 
-
-    Car main_car {SCREEN_WIDTH / 2,SCREEN_HEIGHT / 2,50.0f,20.0f};
+    Vector2 random_pos = get_random_spawn();
+    Car main_car {random_pos.x,random_pos.y,50.0f,20.0f};
 
     while (!WindowShouldClose())
     {   
