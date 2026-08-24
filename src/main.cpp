@@ -6,6 +6,17 @@
 
 #include "raylib.h"
 
+
+struct Collision {
+    float angle;//deg
+    float distance;
+    float hit_distance;
+};
+
+constexpr int COLLISION_COUNT {8};
+
+constexpr float COLLISIONS_ANGLE[COLLISION_COUNT] {0.0f,90.0f,180.0f,270.0f,45.0f,135.0f,225.0f,315.0f};
+
 constexpr int SCREEN_WIDTH = 1000;
 constexpr int SCREEN_HEIGHT = 900;
 
@@ -83,6 +94,9 @@ public:
     Car(float x,float y,float w,float h):position{x,y},size{w,h} {
 
     }
+    Collision get_collisions() {
+        return {};
+    }
     void update(float delta_time) {
         if (angle >= 360.0f)
             angle -= 360.0f;
@@ -145,6 +159,13 @@ public:
 
             float steering_radius {car.size.x / std::tanf(to_radians(car.steering_angle))};
             DrawCircleLines(car.position.x + car_direction.y * steering_radius,car.position.y + -(car_direction.x) * steering_radius,steering_radius,BLACK);
+
+
+            // collision rays
+            for (const float &angle : COLLISIONS_ANGLE) {
+                Vector2 direction {get_direction_from_angle(car.angle + angle)};
+                DrawLine(car.position.x,car.position.y ,car.position.x + direction.x * 50,car.position.y + direction.y * 50,RED);
+            }
         }
     }
 };
