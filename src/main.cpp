@@ -3,19 +3,26 @@
 #include <ctime>
 #include <cmath>
 #include <algorithm>
+#include <array>
 
 #include "raylib.h"
 
 
 struct Collision {
     float angle;//deg
-    float distance;
     float hit_distance;
+};
+
+struct Border {
+    Vector2 start;
+    Vector2 end;
 };
 
 constexpr int COLLISION_COUNT {8};
 
 constexpr float COLLISIONS_ANGLE[COLLISION_COUNT] {0.0f,90.0f,180.0f,270.0f,45.0f,135.0f,225.0f,315.0f};
+
+constexpr int COLLISION_DISTANCE {50};
 
 constexpr int SCREEN_WIDTH = 1000;
 constexpr int SCREEN_HEIGHT = 900;
@@ -59,6 +66,59 @@ constexpr Rectangle city_roads[] {
     {0,SCREEN_HEIGHT - ROADS_GAP - ROAD_WIDTH,SCREEN_WIDTH,ROAD_WIDTH},
 };
 
+constexpr Border road_borders[] {
+    //vertical borders
+    {{ROADS_GAP,0},{ROADS_GAP,ROADS_GAP}},
+    {{ROADS_GAP + ROAD_WIDTH,0},{ROADS_GAP + ROAD_WIDTH,ROADS_GAP}},
+
+    {{SCREEN_WIDTH - ROADS_GAP - ROAD_WIDTH,0},{SCREEN_WIDTH - ROADS_GAP - ROAD_WIDTH,ROADS_GAP}},
+    {{SCREEN_WIDTH - ROADS_GAP,0},{SCREEN_WIDTH - ROADS_GAP,ROADS_GAP}},
+
+    {{ROADS_GAP,SCREEN_HEIGHT - ROADS_GAP},{ROADS_GAP,SCREEN_HEIGHT}},
+    {{ROADS_GAP + ROAD_WIDTH,SCREEN_HEIGHT - ROADS_GAP},{ROADS_GAP + ROAD_WIDTH,SCREEN_HEIGHT}},
+
+    {{SCREEN_WIDTH - ROADS_GAP - ROAD_WIDTH,SCREEN_HEIGHT - ROADS_GAP},{SCREEN_WIDTH - ROADS_GAP - ROAD_WIDTH,SCREEN_HEIGHT}},
+    {{SCREEN_WIDTH - ROADS_GAP,SCREEN_HEIGHT - ROADS_GAP},{SCREEN_WIDTH - ROADS_GAP,SCREEN_HEIGHT}},
+
+    {{ROADS_GAP,ROADS_GAP + ROAD_WIDTH},{ROADS_GAP,ROADS_GAP + ROAD_WIDTH + SCREEN_HEIGHT - ROADS_GAP * 2 - ROAD_WIDTH * 2}},
+    {{ROADS_GAP + ROAD_WIDTH ,ROADS_GAP + ROAD_WIDTH},{ROADS_GAP + ROAD_WIDTH,ROADS_GAP + ROAD_WIDTH + SCREEN_HEIGHT - ROADS_GAP * 2 - ROAD_WIDTH * 2}},
+
+    {{SCREEN_WIDTH - ROADS_GAP - ROAD_WIDTH,ROADS_GAP + ROAD_WIDTH},{SCREEN_WIDTH - ROADS_GAP - ROAD_WIDTH,ROADS_GAP + ROAD_WIDTH + SCREEN_HEIGHT - ROADS_GAP * 2 - ROAD_WIDTH * 2}},
+    {{SCREEN_WIDTH - ROADS_GAP ,ROADS_GAP + ROAD_WIDTH},{SCREEN_WIDTH - ROADS_GAP,ROADS_GAP + ROAD_WIDTH + SCREEN_HEIGHT - ROADS_GAP * 2 - ROAD_WIDTH * 2}},
+
+    {{0,ROADS_GAP},{0,ROADS_GAP + ROAD_WIDTH}},
+    {{0,SCREEN_HEIGHT - ROADS_GAP},{0,SCREEN_HEIGHT - ROADS_GAP - ROAD_WIDTH}},
+
+    {{SCREEN_WIDTH,ROADS_GAP},{SCREEN_WIDTH,ROADS_GAP + ROAD_WIDTH}},
+    {{SCREEN_WIDTH,SCREEN_HEIGHT - ROADS_GAP},{SCREEN_WIDTH,SCREEN_HEIGHT - ROADS_GAP - ROAD_WIDTH}},
+
+    //horizontal borders
+    {{0,ROADS_GAP},{ROADS_GAP,ROADS_GAP}},
+    {{0,ROADS_GAP + ROAD_WIDTH},{ROADS_GAP,ROADS_GAP + ROAD_WIDTH}},
+
+    {{SCREEN_WIDTH - ROADS_GAP,ROADS_GAP},{SCREEN_WIDTH,ROADS_GAP}},
+    {{SCREEN_WIDTH - ROADS_GAP,ROADS_GAP + ROAD_WIDTH},{SCREEN_WIDTH,ROADS_GAP + ROAD_WIDTH}},
+
+    {{SCREEN_WIDTH - ROADS_GAP,SCREEN_HEIGHT - ROADS_GAP },{SCREEN_WIDTH,SCREEN_HEIGHT - ROADS_GAP}},
+
+    {{SCREEN_WIDTH - ROADS_GAP,SCREEN_HEIGHT - ROADS_GAP - ROAD_WIDTH},{SCREEN_WIDTH,SCREEN_HEIGHT - ROADS_GAP - ROAD_WIDTH }},
+
+    {{0,SCREEN_HEIGHT - ROADS_GAP},{ROADS_GAP,SCREEN_HEIGHT - ROADS_GAP}},
+    {{0,SCREEN_HEIGHT - ROADS_GAP - ROAD_WIDTH },{ROADS_GAP,SCREEN_HEIGHT - ROADS_GAP - ROAD_WIDTH}},
+
+    {{ROADS_GAP + ROAD_WIDTH,ROADS_GAP},{ROADS_GAP + ROAD_WIDTH + SCREEN_WIDTH - ROADS_GAP * 2 - ROAD_WIDTH * 2,ROADS_GAP}},
+    {{ROADS_GAP + ROAD_WIDTH,ROADS_GAP + ROAD_WIDTH},{ROADS_GAP + ROAD_WIDTH + SCREEN_WIDTH - ROADS_GAP * 2 - ROAD_WIDTH * 2,ROADS_GAP + ROAD_WIDTH}},
+
+    {{ROADS_GAP + ROAD_WIDTH,SCREEN_HEIGHT - ROADS_GAP},{ROADS_GAP + ROAD_WIDTH + SCREEN_WIDTH - ROADS_GAP * 2 - ROAD_WIDTH * 2,SCREEN_HEIGHT - ROADS_GAP}},
+    {{ROADS_GAP + ROAD_WIDTH,SCREEN_HEIGHT - ROADS_GAP - ROAD_WIDTH},{ROADS_GAP + ROAD_WIDTH + SCREEN_WIDTH - ROADS_GAP * 2 - ROAD_WIDTH * 2,SCREEN_HEIGHT - ROADS_GAP - ROAD_WIDTH}},
+
+    {{ROADS_GAP,0 },{ROADS_GAP + ROAD_WIDTH,0}},
+    {{SCREEN_WIDTH - ROADS_GAP,0 },{SCREEN_WIDTH - ROADS_GAP - ROAD_WIDTH,0}},
+
+    {{ROADS_GAP,SCREEN_HEIGHT},{ROADS_GAP + ROAD_WIDTH,SCREEN_HEIGHT}},
+    {{SCREEN_WIDTH - ROADS_GAP,SCREEN_HEIGHT },{SCREEN_WIDTH - ROADS_GAP - ROAD_WIDTH,SCREEN_HEIGHT}},
+};
+
 constexpr Rectangle spawn_points[] {
     {city_roads[0].x + (ROAD_WIDTH - SPAWN_SIZE) / 2,city_roads[0].y + SPAWN_SIZE_DIFF,SPAWN_SIZE,SPAWN_SIZE},
     {city_roads[0].x + (ROAD_WIDTH - SPAWN_SIZE) / 2,city_roads[0].y + city_roads[0].height - SPAWN_SIZE - SPAWN_SIZE_DIFF,SPAWN_SIZE,SPAWN_SIZE},
@@ -94,8 +154,25 @@ public:
     Car(float x,float y,float w,float h):position{x,y},size{w,h} {
 
     }
-    Collision get_collisions() {
-        return {};
+    std::array<Collision,COLLISION_COUNT> get_collisions() {
+        std::array<Collision,COLLISION_COUNT> result {};
+        for (int i {0};i < COLLISION_COUNT;i++) {
+            for (int d {0};d < COLLISION_DISTANCE;d++) {
+                float angle = COLLISIONS_ANGLE[i];
+                Vector2 direction {get_direction_from_angle(this->angle + angle)};
+                Vector2 point {floor(this->position.x + direction.x * d),floor(this->position.y + direction.y * d)};
+                result[i] = Collision{angle,(float)d};
+                //std::cout << angle << ", pos = " << point.x << ", " << point.y << "\n";
+                for (const Rectangle &road : city_roads) {  
+
+                    if (road.x >= point.x || road.x + road.width <= point.x || road.y >= point.y || road.y + road.height <= point.y) {
+                        result[i].hit_distance = (float)d;
+                        break;
+                    }
+                }
+            }
+        }
+        return result;
     }
     void update(float delta_time) {
         if (angle >= 360.0f)
@@ -162,9 +239,11 @@ public:
 
 
             // collision rays
-            for (const float &angle : COLLISIONS_ANGLE) {
-                Vector2 direction {get_direction_from_angle(car.angle + angle)};
-                DrawLine(car.position.x,car.position.y ,car.position.x + direction.x * 50,car.position.y + direction.y * 50,RED);
+            auto collisions = car.get_collisions();
+            for (const Collision &collision : collisions) {
+                Vector2 direction {get_direction_from_angle(car.angle + collision.angle)};
+                DrawLine(car.position.x,car.position.y ,car.position.x + direction.x * COLLISION_DISTANCE,car.position.y + direction.y * COLLISION_DISTANCE,RED);
+                DrawLine(car.position.x,car.position.y ,car.position.x + direction.x * collision.hit_distance,car.position.y + direction.y * collision.hit_distance,GREEN);
             }
         }
     }
@@ -185,6 +264,10 @@ void draw_city() {
 
     for (const Rectangle &spawn : spawn_points) {
         DrawRectangleRec(spawn,DARKPURPLE);
+    }
+
+    for (const Border &border : road_borders) {
+        DrawLineV(border.start,border.end,MAGENTA);
     }
 }
 
