@@ -55,6 +55,10 @@ Vector2 get_direction_from_angle(float angle) {
     return {cos(radians) ,-sin(radians)};
 }
 
+float cross(Vector2 a,Vector2 b) {
+    return a.x * b.y - a.y * b.x;
+}
+
 constexpr Rectangle city_roads[] {
     {ROADS_GAP,0,ROAD_WIDTH,SCREEN_HEIGHT},
 
@@ -157,19 +161,26 @@ public:
     std::array<Collision,COLLISION_COUNT> get_collisions() {
         std::array<Collision,COLLISION_COUNT> result {};
         for (int i {0};i < COLLISION_COUNT;i++) {
-            for (int d {0};d < COLLISION_DISTANCE;d++) {
-                float angle = COLLISIONS_ANGLE[i];
-                Vector2 direction {get_direction_from_angle(this->angle + angle)};
-                Vector2 point {floor(this->position.x + direction.x * d),floor(this->position.y + direction.y * d)};
-                result[i] = Collision{angle,(float)d};
-                //std::cout << angle << ", pos = " << point.x << ", " << point.y << "\n";
-                for (const Rectangle &road : city_roads) {  
 
-                    if (road.x >= point.x || road.x + road.width <= point.x || road.y >= point.y || road.y + road.height <= point.y) {
-                        result[i].hit_distance = (float)d;
-                        break;
-                    }
+            float angle = COLLISIONS_ANGLE[i];
+
+            Vector2 direction {get_direction_from_angle(this->angle + angle)};
+            result[i] = {angle,COLLISION_DISTANCE};
+
+            for (const Border &border : road_borders) {  
+                Vector2 line_dir {border.end.x - border.start.x,border.end.y - border.start.y};
+                Vector2 to_line {border.start.x - this->position.x,border.start.y - this->position.y};
+                float denominator {cross(direction,line_dir)};
+
+                if (denominator == 0.0f)
+                    continue;
+
+                float t {cross(to_line,line_dir) / denominator};
+                float u {cross(to_line,direction) / denominator};
+                if (t > 0.0f && u > 0.0f && u < 1.0f) {
+                    result[i].hit_distance = std::min(t,result[i].hit_distance);
                 }
+                
             }
         }
         return result;
