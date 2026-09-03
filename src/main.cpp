@@ -22,7 +22,7 @@ constexpr int COLLISION_COUNT {8};
 
 constexpr float COLLISIONS_ANGLE[COLLISION_COUNT] {0.0f,90.0f,180.0f,270.0f,45.0f,135.0f,225.0f,315.0f};
 
-constexpr int COLLISION_DISTANCE {50};
+constexpr int COLLISION_DISTANCE {50 * 2};
 
 constexpr int SCREEN_WIDTH = 1000;
 constexpr int SCREEN_HEIGHT = 900;
@@ -202,7 +202,7 @@ public:
     }
     void gas(float hw,float delta_time) {
         float input = std::clamp(hw,-1.0f,1.0f);
-        this->speed = std::clamp(this->speed + acceleration * input * delta_time,-this->max_speed * 0.5f,this->max_speed);
+        this->speed = std::clamp(this->speed + acceleration * input * delta_time,-this->max_speed * 0.2f,this->max_speed);
 
     }
     void turn(float hw,float delta_time) {
@@ -291,6 +291,7 @@ int main()
     SetTargetFPS(60);
 
     Vector2 random_pos = get_random_spawn();
+    Vector2 *goal = new Vector2{get_random_spawn()};
     Car main_car {random_pos.x,random_pos.y,50.0f,20.0f};
 
     while (!WindowShouldClose())
@@ -301,10 +302,15 @@ int main()
         if (IsKeyDown(KEY_D)) main_car.turn(-0.9f,delta_time);
         else if (IsKeyDown(KEY_A)) main_car.turn(0.9f,delta_time);
 
+        if (main_car.position.x > goal->x - SPAWN_SIZE / 2 && main_car.position.y > goal->y - SPAWN_SIZE / 2 && main_car.position.x < goal->x + SPAWN_SIZE / 2 && main_car.position.y < goal->y + SPAWN_SIZE / 2) {
+            delete goal;
+            goal = new Vector2{get_random_spawn()};
+        }
+
         main_car.update(delta_time);
         BeginDrawing();
         draw_city();
-       
+        DrawRectanglePro({goal->x,goal->y,SPAWN_SIZE,SPAWN_SIZE},{SPAWN_SIZE / 2 , SPAWN_SIZE / 2},0,ORANGE);
 
         Car::draw_car(main_car,true);
         DrawText(TextFormat("Frame time: %02.02f ms", GetFrameTime()), 10, 10, 20, WHITE);
@@ -315,6 +321,7 @@ int main()
 
 
     }
+    delete goal;
     CloseWindow();
     return 0;
 }
