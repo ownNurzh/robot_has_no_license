@@ -190,7 +190,10 @@ public:
             angle -= 360.0f;
         if (angle < 0.0f)
             angle += 360.0f;
-
+        // auto collisions = this->get_collisions();
+        // for (const Collision &collision : collisions) {
+            
+        // }
         if (this->speed != 0.0f) {
             float steering_radius {this->size.x / std::tanf(to_radians(this->steering_angle))};
             float angular_velocity {this->speed / steering_radius };
@@ -252,9 +255,16 @@ public:
             // collision rays
             auto collisions = car.get_collisions();
             for (const Collision &collision : collisions) {
+
                 Vector2 direction {get_direction_from_angle(car.angle + collision.angle)};
+
                 DrawLine(car.position.x,car.position.y ,car.position.x + direction.x * COLLISION_DISTANCE,car.position.y + direction.y * COLLISION_DISTANCE,RED);
                 DrawLine(car.position.x,car.position.y ,car.position.x + direction.x * collision.hit_distance,car.position.y + direction.y * collision.hit_distance,GREEN);
+                Vector2 local_direction {get_direction_from_angle(collision.angle)};
+                float tx = car.size.x / 2 / fabsf(local_direction.x);
+                float ty = car.size.y / 2 / fabsf(local_direction.y);
+                float t = fminf(tx, ty);
+                DrawLine(car.position.x,car.position.y ,car.position.x + direction.x * t,car.position.y + direction.y * t,PINK);
             }
         }
     }
