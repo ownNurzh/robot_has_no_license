@@ -301,8 +301,9 @@ int main()
         else if (IsKeyDown(KEY_W)) main_car.gas(0.5f,delta_time);
         if (IsKeyDown(KEY_D)) main_car.turn(-0.9f,delta_time);
         else if (IsKeyDown(KEY_A)) main_car.turn(0.9f,delta_time);
-
-        if (main_car.position.x > goal->x - SPAWN_SIZE / 2 && main_car.position.y > goal->y - SPAWN_SIZE / 2 && main_car.position.x < goal->x + SPAWN_SIZE / 2 && main_car.position.y < goal->y + SPAWN_SIZE / 2) {
+        Vector2 diff_with_car_goal_pos = Vector2{goal->x - main_car.position.x,goal->y - main_car.position.y};
+        float d = SPAWN_SIZE / 2;
+        if (diff_with_car_goal_pos.x < d && diff_with_car_goal_pos.y < d) {
             delete goal;
             goal = new Vector2{get_random_spawn()};
         }
