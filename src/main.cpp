@@ -155,6 +155,7 @@ public:
 
     float max_speed {200.0f};
 
+    bool alive {true};
     Car(float x,float y,float w,float h):position{x,y},size{w,h} {
 
     }
@@ -186,14 +187,21 @@ public:
         return result;
     }
     void update(float delta_time) {
+        if (!alive) return;
         if (angle >= 360.0f)
             angle -= 360.0f;
         if (angle < 0.0f)
             angle += 360.0f;
-        // auto collisions = this->get_collisions();
-        // for (const Collision &collision : collisions) {
-            
-        // }
+        auto collisions = this->get_collisions();
+        for (const Collision &collision : collisions) {
+            Vector2 local_direction {get_direction_from_angle(collision.angle)};
+            float tx = this->size.x / 2 / fabsf(local_direction.x);
+            float ty = this->size.y / 2 / fabsf(local_direction.y);
+            float t = fminf(tx, ty);
+            if (collision.hit_distance <= t) {
+                this->alive = false;
+            }
+        }
         if (this->speed != 0.0f) {
             float steering_radius {this->size.x / std::tanf(to_radians(this->steering_angle))};
             float angular_velocity {this->speed / steering_radius };
