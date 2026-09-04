@@ -6,6 +6,7 @@
 #include <array>
 
 #include "raylib.h"
+#include "util.h"
 
 
 struct Collision {
@@ -38,26 +39,6 @@ constexpr int ROADS_GAP {ROAD_WIDTH};
 constexpr float CAR_WIDTH {50.0f};
 
 constexpr float CAR_HEIGHT {20.0f};
-
-
-float to_radians(float deg) {
-    constexpr double df = PI / 180.0f;
-    return deg * df;
-}
-
-float to_deg(float rad) {
-    constexpr double df = (180.0f / PI);
-    return rad * df;
-}
-
-Vector2 get_direction_from_angle(float angle) {
-    float radians = to_radians(angle);
-    return {cos(radians) ,-sin(radians)};
-}
-
-float cross(Vector2 a,Vector2 b) {
-    return a.x * b.y - a.y * b.x;
-}
 
 constexpr Rectangle city_roads[] {
     {ROADS_GAP,0,ROAD_WIDTH,SCREEN_HEIGHT},
