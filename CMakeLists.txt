@@ -8,6 +8,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(entryFile src/main.cpp)
 
+target_sources(entryFile PRIVATE
+    include/car.cpp
+    include/game.cpp
+)
+
 #base include
 target_include_directories(entryFile PRIVATE include)
 
